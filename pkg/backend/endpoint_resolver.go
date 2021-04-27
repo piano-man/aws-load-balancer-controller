@@ -89,6 +89,17 @@ func (r *defaultEndpointResolver) ResolvePodEndpoints(ctx context.Context, svcKe
 				if !exists {
 					return nil, false, errors.New("couldn't find podInfo for ready endpoint")
 				}
+                //remap the endpoint
+                podTemp := &corev1.Pod{}
+				podRef := *epAddr.TargetRef
+				nameTemp := podRef.Name
+				r.k8sClient.Get(ctx, client.ObjectKey{Namespace: svc.Namespace, Name: nameTemp}, podTemp)
+				labelmap := podTemp.Labels 
+				for k, v := range labelmap {
+					if k == "interface-label" {
+						epAddr.IP = v
+					}
+				}
 				endpoints = append(endpoints, buildPodEndpoint(pod, epAddr, epPort))
 			}
 
@@ -112,6 +123,17 @@ func (r *defaultEndpointResolver) ResolvePodEndpoints(ctx context.Context, svcKe
 						containsPotentialReadyEndpoints = true
 						continue
 					}
+                    //remap the endpoint
+                    podTemp := &corev1.Pod{}
+				    podRef := *epAddr.TargetRef
+				    nameTemp := podRef.Name
+				    r.k8sClient.Get(ctx, client.ObjectKey{Namespace: svc.Namespace, Name: nameTemp}, podTemp)
+				    labelmap := podTemp.Labels 
+				    for k, v := range labelmap {
+					    if k == "interface-label" {
+						    epAddr.IP = v
+					    }
+				    }
 					endpoints = append(endpoints, buildPodEndpoint(pod, epAddr, epPort))
 				}
 			}
